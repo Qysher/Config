@@ -58,21 +58,33 @@ public class ConfigSystem {
     }
 
     public <T> T get(Object key) {
-        return values.containsKey(key) ? (T) values.get(key) : null;
+        return get(key, null);
     }
 
-    public <T> T get_s(Object key, Class<?> clazz) {
-        return valid(key, clazz) ? (T) values.get(key) : null;
+    public <T> T get(Object key, T default_value) {
+        return values.containsKey(key) ? (T) values.get(key) : default_value;
     }
 
     public <T> T getAs(Object key, Class<T> clazz) {
+        return getAs(key, null, clazz);
+    }
+
+    public <T> T getAs(Object key, T default_value, Class<T> clazz) {
         if(values.containsKey(key)) {
             try {
                 T val = clazz.cast(values.get(key));
                 return val;
             } catch (ClassCastException ignored) { }
         }
-        return null;
+        return default_value;
+    }
+
+    public <T> T get_s(Object key, Class<?> clazz) {
+        return get_s(key, null, clazz);
+    }
+
+    public <T> T get_s(Object key, T default_value, Class<?> clazz) {
+        return valid(key, clazz) ? (T) values.get(key) : default_value;
     }
 
     public boolean valid(Object key, Class<?> clazz) {
