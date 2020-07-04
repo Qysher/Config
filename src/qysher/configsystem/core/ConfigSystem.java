@@ -1,6 +1,7 @@
 package qysher.configsystem.core;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ConfigSystem {
@@ -145,10 +146,17 @@ public class ConfigSystem {
             try {
                 FileInputStream fileInputStream = new FileInputStream(file);
 
-                // TODO: Replace 'readAllBytes' with a backwards compatible alternative
-                byte[] bytes = fileInputStream.readAllBytes();
+                ArrayList<Byte> bytes = new ArrayList<>();
+                int read;
+                while((read = fileInputStream.read()) != -1) bytes.add((byte)read);
+
+                byte[] byteArray = new byte[bytes.size()];
+                for(int i = 0 ; i < bytes.size() ; i++) byteArray[i] = bytes.get(i);
+
+                bytes.clear();
+
                 fileInputStream.close();
-                return bytes;
+                return byteArray;
             } catch (Exception e) {
                 e.printStackTrace();
             }
