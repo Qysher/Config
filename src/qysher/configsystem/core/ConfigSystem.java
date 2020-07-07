@@ -97,6 +97,10 @@ public class ConfigSystem {
         return false;
     }
 
+    public boolean contains(Object key) {
+        return values.containsKey(key);
+    }
+
     public static class ByteConversion {
 
         public static byte[] toByteArray(Object object) {
