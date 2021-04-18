@@ -4,16 +4,16 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class ConfigSystem {
+public class Config {
 
     public HashMap<Object, Object> values = new HashMap<>();
     public File file;
 
-    public ConfigSystem(File file) {
+    public Config(File file) {
         this.file = file;
     }
 
-    public boolean checkFile() {
+    public boolean createFileAndDirectories() {
         try {
             File parentFolder = file.getParentFile();
             if(parentFolder != null)
@@ -30,21 +30,21 @@ public class ConfigSystem {
         return true;
     }
 
-    public ConfigSystem load() {
-        if(!checkFile()) return this;
+    public Config load() {
+        if(!createFileAndDirectories()) return this;
         byte[] bytes = ByteFileWriter.readBytesFromFile(file);
         if(bytes.length != 0)
-            values = ByteConversion.toMap(bytes);
+            values = ByteConversion.byteArrayToMap(bytes);
         return this;
     }
 
-    public ConfigSystem save() {
-        if(!checkFile()) return this;
-        ByteFileWriter.writeBytesToFile(file, ByteConversion.toByteArray(values));
+    public Config save() {
+        if(!createFileAndDirectories()) return this;
+        ByteFileWriter.writeBytesToFile(file, ByteConversion.objectToByteArray(values));
         return this;
     }
 
-    public ConfigSystem registerShutdownHook() {
+    public Config registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(this::save));
         return this;
     }
@@ -57,37 +57,39 @@ public class ConfigSystem {
         values.remove(key);
     }
 
-    public <T> T get(Object key) {
-        return get(key, null);
+    public <T> T valueOf(Object key) {
+        return valueOf(key, null);
     }
 
-    public <T> T get(Object key, T default_value) {
+    public <T> T valueOf(Object key, T default_value) {
         return values.containsKey(key) ? (T) values.get(key) : default_value;
     }
 
-    public <T> T getAs(Object key, Class<T> clazz) {
-        return getAs(key, null, clazz);
+    public <T> T valueAs(Object key, Class<T> clazz) {
+        return valueAs(key, null, clazz);
     }
 
-    public <T> T getAs(Object key, T default_value, Class<T> clazz) {
-        if(values.containsKey(key)) {
-            try {
-                T val = clazz.cast(values.get(key));
-                return val;
-            } catch (ClassCastException ignored) { }
+    public <T> T valueAs(Object key, T default_value, Class<T> clazz) {
+        if(!values.containsKey(key)) {
+            return default_value;
         }
+
+        try {
+            return clazz.cast(values.get(key));
+        } catch (ClassCastException ignored) { }
+
         return default_value;
     }
 
-    public <T> T get_s(Object key, Class<?> clazz) {
-        return get_s(key, null, clazz);
+    public <T> T valueAsSafe(Object key, Class<?> clazz) {
+        return valueAsSafe(key, null, clazz);
     }
 
-    public <T> T get_s(Object key, T default_value, Class<?> clazz) {
-        return valid(key, clazz) ? (T) values.get(key) : default_value;
+    public <T> T valueAsSafe(Object key, T default_value, Class<?> clazz) {
+        return isCastValid(key, clazz) ? (T) values.get(key) : default_value;
     }
 
-    public boolean valid(Object key, Class<?> clazz) {
+    public boolean isCastValid(Object key, Class<?> clazz) {
         if(values.containsKey(key)) {
             try {
                 clazz.cast(values.get(key));
@@ -101,9 +103,44 @@ public class ConfigSystem {
         return values.containsKey(key);
     }
 
+    public static class StaticKey <T> {
+        public Config config;
+        public String key;
+        public T default_value;
+
+        public StaticKey(String key, T default_value, Config config) {
+            this.key = key;
+            this.default_value = default_value;
+            this.config = config;
+        }
+
+        public String toString() {
+            return key;
+        }
+
+        public void setValue(T value) {
+            if(config == null) return;
+            config.set(key, value);
+        }
+
+        public T getValue() {
+            if(config == null) return null;
+            return config.valueOf(key, default_value);
+        }
+
+        public T getValue(T override_default_value) {
+            if(config == null) return null;
+            return config.valueOf(key, override_default_value);
+        }
+
+        public boolean hasValue() {
+            return config.contains(key);
+        }
+    }
+
     public static class ByteConversion {
 
-        public static byte[] toByteArray(Object object) {
+        public static byte[] objectToByteArray(Object object) {
             try {
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
@@ -118,7 +155,7 @@ public class ConfigSystem {
             return new byte[0];
         }
 
-        public static HashMap<Object, Object> toMap(byte[] bytes) {
+        public static HashMap<Object, Object> byteArrayToMap(byte[] bytes) {
             try {
                 ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
                 ObjectInput objectInput = new ObjectInputStream(byteArrayInputStream);
@@ -127,16 +164,20 @@ public class ConfigSystem {
                 objectInput.close();
                 byteArrayInputStream.close();
 
-                if(valid(object, HashMap.class)) {
+                if(isCastValid(object, HashMap.class)) {
+                    System.out.println("Valid");
                     return (HashMap<Object, Object>) object;
                 }
+                System.out.println("Invalid");
+
+                //return (HashMap<Object, Object>) object;
             } catch (Exception e) {
                 e.printStackTrace();
             }
             return null;
         }
 
-        public static boolean valid(Object object, Class<?> clazz) {
+        public static boolean isCastValid(Object object, Class<?> clazz) {
             try {
                 clazz.cast(object);
                 return true;
