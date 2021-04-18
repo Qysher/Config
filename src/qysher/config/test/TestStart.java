@@ -1,6 +1,6 @@
-package qysher.configsystem.test;
+package qysher.config.test;
 
-import qysher.configsystem.core.Config;
+import qysher.config.core.Config;
 
 import java.io.File;
 

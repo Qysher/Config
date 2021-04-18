@@ -1,4 +1,4 @@
-package qysher.configsystem.core;
+package qysher.config.core;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -81,11 +81,11 @@ public class Config {
         return default_value;
     }
 
-    public <T> T valueAsSafe(Object key, Class<?> clazz) {
-        return valueAsSafe(key, null, clazz);
+    public <T> T valueAs_Safe(Object key, Class<?> clazz) {
+        return valueAs_Safe(key, null, clazz);
     }
 
-    public <T> T valueAsSafe(Object key, T default_value, Class<?> clazz) {
+    public <T> T valueAs_Safe(Object key, T default_value, Class<?> clazz) {
         return isCastValid(key, clazz) ? (T) values.get(key) : default_value;
     }
 
